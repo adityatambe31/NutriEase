@@ -1,11 +1,14 @@
-import mongoose, { Schema } from "mongoose";
 
+import mongoose, { Schema } from 'mongoose';
+
+// Ingredient Schema
 const IngredientSchema = new Schema({
   item: String,
   quantity: Number,
   unit: String,
 });
 
+// Meal Option Schema
 const MealOptionSchema = new Schema({
   option: String,
   recipe: String,
@@ -16,6 +19,7 @@ const MealOptionSchema = new Schema({
   cost_per_serving: String,
 });
 
+// Day Schema
 const DaySchema = new Schema({
   DayName: String,
   breakfast: [MealOptionSchema],
@@ -23,6 +27,7 @@ const DaySchema = new Schema({
   dinner: [MealOptionSchema],
 });
 
+// Main Meal Plan Schema
 const MealPlanSchema = new Schema({
   userSelection: {
     age: String,
@@ -34,16 +39,34 @@ const MealPlanSchema = new Schema({
     weightGoal: String,
     culturalPreference: String,
   },
+
   meals: {
     mealPlan: {
       Days: [DaySchema],
     },
   },
-  userID: String,
+
+  // Ownership: always set by the authenticated server-side session.
+  userID: {
+    type: String,
+    required: true,
+    index: true,
+  },
+
   userEmail: String,
   userName: String,
-  id: String,
-  timestamp: { type: Date, default: Date.now },
+
+  // Unique within each user's meal plans.
+  id: {
+    type: String,
+    required: true,
+  },
+
+  timestamp: {
+    type: Date,
+    default: Date.now,
+  },
+
   user: {
     uid: String,
     email: String,
@@ -54,5 +77,15 @@ const MealPlanSchema = new Schema({
   },
 });
 
-export default mongoose.models.MealPlan ||
-  mongoose.model("MealPlan", MealPlanSchema);
+// Prevent duplicate meal-plan IDs for the same user.
+MealPlanSchema.index(
+  { userID: 1, id: 1 },
+  { unique: true },
+);
+
+// Reuse the existing model during Next.js hot reloads.
+const MealPlan =
+  mongoose.models.MealPlan ||
+  mongoose.model('MealPlan', MealPlanSchema);
+
+export default MealPlan;

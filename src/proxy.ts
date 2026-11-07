@@ -1,15 +1,15 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 
-export function middleware(request: NextRequest) {
-  // Skip middleware for all API routes
+export function proxy(request: NextRequest) {
+  // Skip API routes.
   if (request.nextUrl.pathname.startsWith('/api')) {
     return NextResponse.next();
   }
 
-  // Continue with security headers for non-API routes
+  // Apply security headers to non-API pages.
   const response = NextResponse.next();
 
-  // Add security headers
   response.headers.set('X-Content-Type-Options', 'nosniff');
   response.headers.set('X-Frame-Options', 'DENY');
 
@@ -17,7 +17,6 @@ export function middleware(request: NextRequest) {
 }
 
 export const config = {
-  // Apply middleware only to non-API routes
   matcher: [
     '/((?!api/|_next/|static/|images/|favicon.ico|sitemap.xml|robots.txt).*)',
   ],
