@@ -1,0 +1,5 @@
+hooks:
+  pre-push:
+    commands:
+      npm-build:
+        run: "npm run build"

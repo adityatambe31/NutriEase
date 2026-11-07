@@ -1,0 +1,206 @@
+{
+  "type": "object",
+  "properties": {
+    "mealPlan": {
+      "type": "object",
+      "properties": {
+        "Day": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "DayName": {
+                "type": "string"
+              },
+              "breakfast": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "option": {
+                      "type": "string"
+                    },
+                    "recipe": {
+                      "type": "string"
+                    },
+                    "ingredients": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "item": {
+                            "type": "string"
+                          },
+                          "quantity": {
+                            "type": "number"
+                          },
+                          "unit": {
+                            "type": "string"
+                          },
+                          "estimatedPrice": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "item",
+                          "quantity",
+                          "unit",
+                          "estimatedPrice"
+                        ]
+                      }
+                    },
+                    "instructions": {
+                      "type": "string"
+                    },
+                    "estimatedCostPerServing": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "option",
+                    "recipe",
+                    "ingredients",
+                    "instructions",
+                    "estimatedCostPerServing"
+                  ]
+                }
+              },
+              "lunch": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "option": {
+                      "type": "string"
+                    },
+                    "recipe": {
+                      "type": "string"
+                    },
+                    "ingredients": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "item": {
+                            "type": "string"
+                          },
+                          "quantity": {
+                            "type": "number"
+                          },
+                          "unit": {
+                            "type": "string"
+                          },
+                          "estimatedPrice": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "item",
+                          "quantity",
+                          "unit",
+                          "estimatedPrice"
+                        ]
+                      }
+                    },
+                    "instructions": {
+                      "type": "string"
+                    },
+                    "estimatedCostPerServing": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "option",
+                    "recipe",
+                    "ingredients",
+                    "instructions",
+                    "estimatedCostPerServing"
+                  ]
+                }
+              },
+              "dinner": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "option": {
+                      "type": "string"
+                    },
+                    "recipe": {
+                      "type": "string"
+                    },
+                    "ingredients": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "item": {
+                            "type": "string"
+                          },
+                          "quantity": {
+                            "type": "number"
+                          },
+                          "unit": {
+                            "type": "string"
+                          },
+                          "estimatedPrice": {
+                            "type": "number"
+                          }
+                        },
+                        "required": [
+                          "item",
+                          "quantity",
+                          "unit",
+                          "estimatedPrice"
+                        ]
+                      }
+                    },
+                    "instructions": {
+                      "type": "string"
+                    },
+                    "estimatedCostPerServing": {
+                      "type": "number"
+                    }
+                  },
+                  "required": [
+                    "option",
+                    "recipe",
+                    "ingredients",
+                    "instructions",
+                    "estimatedCostPerServing"
+                  ]
+                }
+              },
+              "snacks": {
+                "type": "array",
+                "items": {
+                  "type": "object",
+                  "properties": {
+                    "item": {
+                      "type": "string"
+                    },
+                    "estimatedPrice": {
+                      "type": "number"
+                    }
+                  },
+                  "required": ["item", "estimatedPrice"]
+                }
+              }
+            },
+            "required": ["DayName", "breakfast", "lunch", "dinner", "snacks"]
+          }
+        }
+      }
+    },
+    "whereToFindGoodDeals": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "important": {
+      "type": "string"
+    }
+  },
+  "required": ["mealPlan", "whereToFindGoodDeals", "important"]
+}
