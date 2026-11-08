@@ -6,7 +6,7 @@ import {
   readLimitedJson,
   RequestBodyTooLargeError,
 } from '@/lib/read-limited-json';
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { generateAI } from '@/lib/ai-provider';
 import { z } from 'zod';
 
 export const runtime = 'nodejs';
@@ -18,14 +18,12 @@ const schema = z.object({
 });
 
 export async function POST(request: NextRequest) {
-  // Require a valid authenticated session.
   const identity = await requireUser();
 
   if ('error' in identity) {
     return identity.error;
   }
 
-  // Reject requests from other origins.
   if (!sameOrigin(request)) {
     return NextResponse.json(
       { error: 'Invalid origin' },
@@ -33,31 +31,31 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  // Keep Gemini disabled unless explicitly enabled.
   if (process.env.AI_ENABLED !== 'true') {
     return NextResponse.json(
-      {
-        error:
-          'AI is disabled by default. Configure it safely to enable.',
-      },
+      { error: 'AI is disabled by default' },
       { status: 503 },
     );
   }
 
-  const key = process.env.GEMINI_API_KEY;
-
-  if (!key) {
+  if (
+    process.env.AI_PROVIDER !== 'groq' ||
+    !process.env.GROQ_API_KEY
+  ) {
     return NextResponse.json(
       { error: 'AI is not configured' },
       { status: 503 },
     );
   }
 
-  // Validate the request without reading an unlimited body.
   let prompt: string;
 
   try {
-    const body = await readLimitedJson(request, MAX_BODY_BYTES);
+    const body = await readLimitedJson(
+      request,
+      MAX_BODY_BYTES,
+    );
+
     prompt = schema.parse(body).prompt;
   } catch (error) {
     if (error instanceof RequestBodyTooLargeError) {
@@ -74,7 +72,6 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    // Count the attempt before calling Gemini.
     const allowed = await checkDailyAllowance(
       identity.userId,
       'meal',
@@ -87,33 +84,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const model = new GoogleGenerativeAI(
-      key,
-    ).getGenerativeModel({
-      model: process.env.GEMINI_MODEL || 'gemini-2.5-flash',
+    const text = await generateAI({
+      prompt,
+      systemPrompt:
+        'You are NutriEase, a meal-planning assistant. ' +
+        'Generate meal plans according to the user request. ' +
+        'Return only valid JSON without Markdown fences. ' +
+        'Use the exact structure requested in the user prompt. ' +
+        'Do not invent medical guarantees or claim to provide ' +
+        'professional medical advice.',
+      maxTokens: 4096,
+      jsonMode: true,
     });
-
-    const result = await model.generateContent({
-      contents: [
-        {
-          role: 'user',
-          parts: [{ text: prompt }],
-        },
-      ],
-      generationConfig: {
-        maxOutputTokens: 2048,
-        responseMimeType: 'application/json',
-      },
-    });
-
-    const text = result.response.text();
-
-    if (text.length > 100_000) {
-      return NextResponse.json(
-        { error: 'AI output too large' },
-        { status: 502 },
-      );
-    }
 
     return NextResponse.json({ text });
   } catch {

@@ -9,6 +9,7 @@ import {
   MealPlanFormData,
 } from "@/types/meal-plan";
 import { fetchMealImagesForPlan } from "../services/meal-image-service";
+import { validateMealPlan } from '@/lib/meal-plan-validation';
 
 /**
  * Custom hook that provides meal plan generation and storage functionality.
@@ -95,11 +96,34 @@ export function useMealPlanService() {
     formData: MealPlanFormData,
     mode: PromptMode = "standard"
   ): Promise<string> => {
-    const FINAL_PROMPT =
-      mode === "compact"
-        ? `Return ONLY valid minified JSON. No markdown, no prose, no code fences. Build a 7-day meal plan for a ${formData.age}-year-old ${formData.gender}, ${formData.height}cm, ${formData.weight}kg, activity ${formData.activityLevel}, diet ${formData.dietaryRestrictions}, goal ${formData.weightGoal}, culture ${formData.culturalPreference}. For each day include breakfast, lunch, dinner only with exactly one option each. Keep recipe and tips short (1 sentence each). Keep ingredients to max 5 items per meal. Use this shape exactly: {"mealPlan":[{"day":"Monday","breakfast":[{"name":"","recipe":"","ingredients":[{"item":"","quantity":1,"unit":"serving"}],"nutrition":"","meal_prep_tips":"","estimated_cost_per_serving":""}],"lunch":[...],"dinner":[...]}]}`
-        : `Return ONLY valid JSON. No markdown, no prose, no code fences. Generate a one-week meal plan for a ${formData.age}-year-old ${formData.gender} who is ${formData.height} cm tall, weighs ${formData.weight} kg, has an activity level of ${formData.activityLevel}, follows a ${formData.dietaryRestrictions} diet, and has a goal to ${formData.weightGoal}. They prefer culturally diverse meals from ${formData.culturalPreference}. Provide breakfast, lunch, and dinner for each day with one or two options per meal. Keep each recipe and prep tip concise. Keep ingredients brief and practical. Include nutrition and estimated cost per serving. Return strictly valid JSON only.`;
+    const FINAL_PROMPT = `
+Create exactly seven days of practical meals for this user:
+Age: ${formData.age}; gender: ${formData.gender}; height: ${formData.height} cm;
+weight: ${formData.weight} kg; activity: ${formData.activityLevel};
+diet: ${formData.dietaryRestrictions}; goal: ${formData.weightGoal};
+cuisine preference: ${formData.culturalPreference}.
 
+Return ONLY a valid JSON object with one top-level property: "mealPlan".
+"mealPlan" must be an array of exactly seven day objects, ordered Monday through Sunday.
+Each day must have "day", "breakfast", "lunch", "dinner".
+Each of the three meal properties must be an array containing EXACTLY one meal object.
+Each meal object must contain:
+- "name": a specific meal name (string)
+- "recipe": brief but useful preparation instructions (string)
+- "ingredients": an array of 1 to 5 objects, each with "item" (string),
+  "quantity" (positive number), and "unit" (string)
+- "nutrition": brief approximate calories and protein (string)
+- "meal_prep_tips": one practical tip (string)
+- "estimated_cost_per_serving": approximate price in CAD (string)
+
+Shape example for ONE day only (do not return just this example):
+{"mealPlan":[{"day":"Monday","breakfast":[{"name":"Vegetable Poha","recipe":"Rinse poha, sauté vegetables, and combine.","ingredients":[{"item":"Poha","quantity":80,"unit":"g"}],"nutrition":"About 300 kcal, 8 g protein","meal_prep_tips":"Chop vegetables ahead.","estimated_cost_per_serving":"CAD 2.50"}],"lunch":[],"dinner":[]}]}
+
+In your ACTUAL response, fill all breakfast, lunch, and dinner arrays for
+ALL seven days. Do not leave empty arrays, use placeholders, or refer to
+another day. Follow dietary restrictions strictly. Use sensible approximations;
+do not make medical claims. Return JSON only, no prose or Markdown.
+`;
     try {
       setLoading(true);
 
@@ -693,6 +717,8 @@ export function useMealPlanService() {
           "Meal plan was generated but contained no meals. Please try again."
         );
       }
+
+      validateMealPlan(transformedMealData.mealPlan);
 
       const planWithImages = await fetchImagesForMealPlan(
         transformedMealData.mealPlan as unknown as MealPlan
