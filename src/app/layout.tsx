@@ -30,7 +30,7 @@ export default function RootLayout({
   const clarityProjectId = process.env.NEXT_PUBLIC_CLARITY_PROJECT_ID;
 
   return (
-    <html lang="en">
+   <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >

@@ -171,13 +171,19 @@ do not make medical claims. Return JSON only, no prose or Markdown.
           "Gemini API key is invalid or lacks permission for this model. Check your API key/project settings.";
       }
 
-      console.error("Error generating meal plan:", error);
-      toast.error(userFriendlyMessage);
-      throw new Error(`Failed to generate meal plan: ${errorMessage}`);
+console.error("Error generating meal plan:", error);
+throw new Error(userFriendlyMessage === "Failed to generate meal plan. Please try again."
+  ? errorMessage
+  : userFriendlyMessage);
     } finally {
       setLoading(false);
     }
+
   };
+
+
+
+
 
   function convertNutritionInfo(info: unknown): string[] {
     if (!info) return [];

@@ -23,43 +23,49 @@ interface MealPlanComponentProps {
   meals: MealPlan;
 }
 
+const mealTypes = ["breakfast", "lunch", "dinner"] as const;
+type MealType = (typeof mealTypes)[number];
+
+// Return only real meal options; never invent fallback meals.
 const getMealOption = (
   day: MealPlanDay,
-  mealType: string,
+  mealType: MealType,
   optionIndex: number
-): MealOption => {
-  // Define a default meal option
-  const defaultOption: MealOption = {
-    option: "No option available",
-    recipe: "No recipe available",
-    ingredients: [],
-    tips: "",
-    nutritionalInformation: [],
-  };
+): MealOption | null => {
+  const options = day[mealType];
+  if (!Array.isArray(options)) return null;
 
-  // Safely access the meal options
-  try {
-    const mealTypeKey = mealType as keyof MealPlanDay;
-    const options = day[mealTypeKey];
-
-    // Check if options exist and are an array
-    if (options && Array.isArray(options) && options.length > optionIndex) {
-      return options[optionIndex] as unknown as MealOption;
-    }
-    return defaultOption;
-  } catch (error) {
-    console.error(
-      `Error accessing meal option: ${mealType}[${optionIndex}]`,
-      error
-    );
-    return defaultOption;
+  const option = options[optionIndex];
+  if (
+    !option ||
+    typeof option.option !== "string" ||
+    !option.option.trim() ||
+    typeof option.recipe !== "string" ||
+    !option.recipe.trim()
+  ) {
+    return null;
   }
+
+  return option as MealOption;
+};
+
+const getAvailableOptionIndexes = (day: MealPlanDay): number[] => {
+  const maxOptions = Math.max(
+    0,
+    ...mealTypes.map((mealType) => {
+      const options = day[mealType];
+      return Array.isArray(options) ? options.length : 0;
+    })
+  );
+
+  return Array.from({ length: maxOptions }, (_, index) => index).filter(
+    (index) => mealTypes.some((mealType) => getMealOption(day, mealType, index))
+  );
 };
 
 export default function MealPlanComponent({ meals }: MealPlanComponentProps) {
   const { selectedMeal, selectMeal, clearSelectedMeal } = useMealSelection();
   const { scrollToDay } = useNavigation();
-  const mealTypes = ["breakfast", "lunch", "dinner"];
   if (!meals || !meals.Days || !Array.isArray(meals.Days)) {
     return (
       <div className="p-4 text-center text-red-500">Invalid meal plan data</div>
@@ -108,41 +114,27 @@ export default function MealPlanComponent({ meals }: MealPlanComponentProps) {
               {day.DayName || `Day ${index + 1}`}
             </h3>
 
-            {/* Option 1 */}
-            <h5 className="text-md sm:text-lg md:text-xl font-semibold text-teal-700 leading-6 mb-4 text-center bg-teal-50 py-2 rounded-lg">
-              Option 1
-            </h5>
-            <div className="grid grid-cols-1 gap-5 items-stretch max-w-xs mx-auto sm:max-w-none sm:grid-cols-3">
-              {mealTypes.map((mealType, mealIndex) => {
-                const option = getMealOption(day, mealType, 0);
-                return (
-                  <MealCard
-                    key={mealIndex}
-                    mealType={mealType}
-                    option={option}
-                    onSelect={selectMeal}
-                  />
-                );
-              })}
-            </div>
-
-            {/* Option 2 */}
-            <h5 className="text-md sm:text-lg md:text-xl font-semibold text-teal-700 leading-6 mt-10 mb-4 text-center bg-teal-50 py-2 rounded-lg">
-              Option 2
-            </h5>
-            <div className="grid grid-cols-1 gap-4 items-stretch max-w-xs mx-auto sm:max-w-none sm:grid-cols-3">
-              {mealTypes.map((mealType, mealIndex) => {
-                const option = getMealOption(day, mealType, 1);
-                return (
-                  <MealCard
-                    key={mealIndex}
-                    mealType={mealType}
-                    option={option}
-                    onSelect={selectMeal}
-                  />
-                );
-              })}
-            </div>
+            {/* Render only options actually present in the saved plan. */}
+            {getAvailableOptionIndexes(day).map((optionIndex) => (
+              <React.Fragment key={optionIndex}>
+                <h5 className={`text-md sm:text-lg md:text-xl font-semibold text-teal-700 leading-6 mb-4 text-center bg-teal-50 py-2 rounded-lg ${optionIndex > 0 ? "mt-10" : ""}`}>
+                  Option {optionIndex + 1}
+                </h5>
+                <div className="grid grid-cols-1 gap-5 items-stretch max-w-xs mx-auto sm:max-w-none sm:grid-cols-3">
+                  {mealTypes.map((mealType) => {
+                    const option = getMealOption(day, mealType, optionIndex);
+                    return option ? (
+                      <MealCard
+                        key={`${mealType}-${optionIndex}`}
+                        mealType={mealType}
+                        option={option}
+                        onSelect={selectMeal}
+                      />
+                    ) : null;
+                  })}
+                </div>
+              </React.Fragment>
+            ))}
           </div>
         ))}
       </div>

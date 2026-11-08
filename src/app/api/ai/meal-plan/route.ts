@@ -93,7 +93,7 @@ export async function POST(request: NextRequest) {
         'Use the exact structure requested in the user prompt. ' +
         'Do not invent medical guarantees or claim to provide ' +
         'professional medical advice.',
-      maxTokens: 4096,
+      maxTokens: 8192,
       jsonMode: true,
     });
 
